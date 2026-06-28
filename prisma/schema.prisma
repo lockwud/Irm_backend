@@ -1,0 +1,462 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  COORDINATOR
+  SUPERVISOR
+  STUDENT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  INVITED
+}
+
+enum PlacementStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ReviewStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REVISION
+}
+
+enum VisitStatus {
+  SCHEDULED
+  RESCHEDULED
+  COMPLETED
+  MISSED
+  CANCELLED
+}
+
+enum FieldType {
+  SHORT_TEXT
+  LONG_TEXT
+  DATE
+  CHECKBOX
+  TABLE
+  WEEKLY_TABLE
+}
+
+enum NotificationType {
+  SYSTEM
+  PLACEMENT
+  IRB
+  LESSON
+  VISIT
+  LETTER
+  STAFF
+}
+
+enum StaffInviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  passwordHash  String
+  role          UserRole
+  status        UserStatus @default(ACTIVE)
+  firstName     String?
+  lastName      String?
+  phone         String?
+  lastLoginAt   DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  student       Student?
+  supervisor    Supervisor?
+  coordinator   Coordinator?
+}
+
+model Coordinator {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  staffId   String?  @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model Student {
+  id          String   @id @default(cuid())
+  userId      String?  @unique
+  studentId   String   @unique
+  name        String
+  email       String
+  programme   String
+  department  String
+  year        Int
+  school      String?
+  region      String?
+  status      String   @default("Pending")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model Supervisor {
+  id        String   @id @default(cuid())
+  userId    String?  @unique
+  staffId   String   @unique
+  name      String
+  email     String?
+  capacity  Int      @default(25)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User?    @relation(fields: [userId], references: [id])
+  regions   SupervisorRegion[]
+}
+
+model SupervisorRegion {
+  id           String     @id @default(cuid())
+  supervisorId String
+  region       String
+  createdAt    DateTime   @default(now())
+
+  supervisor   Supervisor @relation(fields: [supervisorId], references: [id], onDelete: Cascade)
+
+  @@unique([supervisorId, region])
+}
+
+model StaffInvitation {
+  id          String            @id @default(cuid())
+  email       String
+  name        String
+  role        UserRole
+  staffId     String?
+  regions     String[]
+  status      StaffInviteStatus @default(PENDING)
+  invitedById String?
+  tokenHash   String
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model School {
+  id           String   @id @default(cuid())
+  name         String
+  category     String?
+  region       String
+  municipality String?
+  district     String?
+  community    String?
+  address      String?
+  capacity     Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SchoolSuggestion {
+  id           String          @id @default(cuid())
+  studentId    String
+  name         String
+  region       String?
+  municipality String?
+  district     String?
+  community    String?
+  address      String?
+  status       PlacementStatus @default(PENDING)
+  reviewedById String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model Placement {
+  id              String          @id @default(cuid())
+  requestCode     String          @unique
+  studentId       String
+  schoolId        String?
+  schoolName      String
+  region          String
+  municipality    String?
+  community       String?
+  supervisorId    String?
+  status          PlacementStatus @default(PENDING)
+  requestedAt     DateTime        @default(now())
+  decidedAt       DateTime?
+  decidedById     String?
+  rejectionReason String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+model InternshipLetterTemplate {
+  id                String   @id @default(cuid())
+  title             String
+  logoUrl           String?
+  letterhead        String
+  letterheadSubline String?
+  body              String
+  footerContact     String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model LetterSignatory {
+  id         String @id @default(cuid())
+  templateId String
+  name       String
+  title      String?
+  sortOrder  Int    @default(0)
+}
+
+model GeneratedLetter {
+  id          String   @id @default(cuid())
+  studentId   String
+  placementId String?
+  templateId  String
+  fileUrl     String?
+  generatedAt DateTime @default(now())
+}
+
+model IrbTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model IrbSection {
+  id         String   @id @default(cuid())
+  templateId String
+  title      String
+  subtitle   String?
+  sortOrder  Int
+  isFixed    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model IrbField {
+  id        String    @id @default(cuid())
+  sectionId String
+  label     String
+  type      FieldType
+  required  Boolean   @default(false)
+  sortOrder Int
+  options   Json?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model IrbSubmission {
+  id          String       @id @default(cuid())
+  studentId   String
+  sectionId   String
+  status      ReviewStatus @default(DRAFT)
+  values      Json
+  submittedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model LessonNoteFormat {
+  id           String   @id @default(cuid())
+  name         String
+  modeDefault  String   @default("Weekly")
+  fontSize     String   @default("12px")
+  headingSize  String   @default("16px")
+  lineHeight   String   @default("1.65")
+  tableDensity String   @default("Comfortable")
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model LessonNoteField {
+  id        String    @id @default(cuid())
+  formatId  String
+  label     String
+  type      FieldType
+  required  Boolean   @default(false)
+  sortOrder Int
+}
+
+model LessonNote {
+  id                    String       @id @default(cuid())
+  lessonCode            String       @unique
+  studentId             String
+  placementId           String?
+  planType              String       @default("Weekly")
+  subject               String
+  topic                 String
+  week                  String?
+  weekEnding            DateTime?
+  className             String?
+  learningIndicators    String?
+  performanceIndicators String?
+  resources             String?
+  termOverview          String?
+  assessmentPlan        String?
+  mentorStatus          ReviewStatus @default(PENDING)
+  supervisorStatus      ReviewStatus @default(PENDING)
+  supervisorComment     String?
+  submittedAt           DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+}
+
+model LessonNoteDay {
+  id           String @id @default(cuid())
+  lessonNoteId String
+  day          String
+  starter      String?
+  main         String?
+  reflection   String?
+  sortOrder    Int
+}
+
+model AiLessonNoteChat {
+  id                String                @id @default(cuid())
+  title             String
+  subject           String
+  topic             String
+  mode              String                @default("Weekly")
+  studentIdentifier String
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  messages          AiLessonNoteMessage[]
+
+  @@index([studentIdentifier])
+  @@index([updatedAt])
+}
+
+model AiLessonNoteMessage {
+  id        String           @id @default(cuid())
+  chatId    String
+  role      String
+  text      String
+  sortOrder Int
+  createdAt DateTime         @default(now())
+
+  chat      AiLessonNoteChat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+}
+
+model Visit {
+  id              String      @id @default(cuid())
+  visitCode       String      @unique
+  studentId       String
+  placementId     String?
+  supervisorId    String
+  schoolId        String?
+  schoolName      String
+  startDate       DateTime
+  endDate         DateTime
+  preferredTime   String?
+  rescheduledDate DateTime?
+  rescheduledTime String?
+  rescheduleReason String?
+  status          VisitStatus @default(SCHEDULED)
+  completedAt     DateTime?
+  completionNote  String?
+  createdById     String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String?
+  title     String
+  message   String
+  type      NotificationType
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+}
+
+model DeviceToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  platform  String?
+  createdAt DateTime @default(now())
+}
+
+model AppearancePreference {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  theme      String   @default("light")
+  style      String   @default("maia")
+  baseColor  String   @default("neutral")
+  themeColor String   @default("indigo")
+  chartColor String   @default("indigo")
+  radius     String   @default("rounded")
+  font       String   @default("Inter")
+  heading    String   @default("medium")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FileAsset {
+  id         String   @id @default(cuid())
+  ownerId    String?
+  entityType String?
+  entityId   String?
+  fileName   String
+  mimeType   String
+  size       Int?
+  url        String
+  createdAt  DateTime @default(now())
+}
+
+model BulkUpload {
+  id           String   @id @default(cuid())
+  uploadedById String
+  type         String
+  fileAssetId  String?
+  status       String
+  summary      Json?
+  createdAt    DateTime @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}

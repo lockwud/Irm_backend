@@ -1,0 +1,44 @@
+[
+  {
+    "role": "student",
+    "identifier": "student@aamusted.edu.gh",
+    "passwordHash": "$2a$10$6fK6CbrehS6oSIzQdukG/Oe8UxeJmPW9sTnSWAZOV5.3aXMeaWeDm",
+    "name": "Kwame Mensah",
+    "mustChangePassword": false
+  },
+  {
+    "role": "student",
+    "identifier": "5201040012",
+    "passwordHash": "$2a$10$MWDCjz4Djvp/djEef6h.EOaVhYWbfwpV6BTTJSbUt6dcTFveuVuqa",
+    "name": "Kwame Mensah",
+    "mustChangePassword": true
+  },
+  {
+    "role": "supervisor",
+    "identifier": "STA-0182",
+    "passwordHash": "$2a$10$fPKpOy9dZknc9rA4xDCYweNET/mYRUXD9.xmV5MAdcAV031uYqhEy",
+    "name": "Dr. Samuel Ofori",
+    "mustChangePassword": false
+  },
+  {
+    "role": "coordinator",
+    "identifier": "coordinator@aamusted.edu.gh",
+    "passwordHash": "$2a$10$B2v6PaQJ3pzc0fI7VW2fueA0EvDtXsEhmNbGrhNLdzBTkCbz09CrK",
+    "name": "Emmanuel Owusu",
+    "mustChangePassword": false
+  },
+  {
+    "role": "student",
+    "identifier": "5221040348@st.aamusted.edu.gh",
+    "passwordHash": "$2a$10$4fv8boGVGHUMiiYYzDoplOZKC1vol95yAvi/WVUmHv9XpYDaYDkMC",
+    "name": "Clement Obeng Boadu",
+    "mustChangePassword": true
+  },
+  {
+    "role": "student",
+    "identifier": "5221040348",
+    "passwordHash": "$2a$10$COuAssLijEfEXmnFZadMue3CO8gO.ldqEKHpePDMhqWJ6TKdow8ke",
+    "name": "Clement Obeng Boadu",
+    "mustChangePassword": true
+  }
+]

@@ -1,0 +1,204 @@
+import fs from "node:fs";
+import path from "node:path";
+import type { AuditLog, InternshipLetterTemplate, IrbSection, IrbSubmission, LessonNoteFormat, School, StaffInvite, StaffMember, SupervisorAssignment, WorkflowData } from "./types.js";
+
+export const workflow: WorkflowData = {
+  students: [
+    { id: "5201040012", name: "Kwame Mensah", email: "kmensah@st.aamusted.edu.gh", programme: "B.Ed. Mathematics", department: "Mathematics Education", year: 4, school: "Asokwa M/A JHS", region: "Ashanti", status: "Active" },
+    { id: "5201040028", name: "Esi Asare", email: "easare@st.aamusted.edu.gh", programme: "B.Ed. English", department: "Languages Education", year: 4, school: "Akropong D/A JHS", region: "Eastern", status: "Active" },
+    { id: "5201040034", name: "Afia Amoah", email: "aamoah@st.aamusted.edu.gh", programme: "B.Ed. Early Childhood", department: "Early Childhood", year: 4, school: "Wesley College Demo", region: "Ashanti", status: "Completed" },
+    { id: "5201040041", name: "Kofi Boateng", email: "kboateng@st.aamusted.edu.gh", programme: "B.Ed. Science", department: "Science Education", year: 4, school: "—", region: "Bono", status: "Pending" },
+    { id: "5201040057", name: "Gifty Owusu", email: "gowusu@st.aamusted.edu.gh", programme: "B.Ed. ICT", department: "ICT Education", year: 4, school: "Kumasi Technical SHS", region: "Ashanti", status: "Active" },
+    { id: "5201040063", name: "Daniel Ofori", email: "dofori@st.aamusted.edu.gh", programme: "B.Ed. Social Studies", department: "Social Studies", year: 4, school: "Mampong Presby JHS", region: "Ashanti", status: "Active" }
+  ],
+  placements: [
+    { id: "PL-1048", student: "Kofi Boateng", school: "Sunyani Senior High", municipality: "Sunyani Municipal", community: "New Town", region: "Bono", supervisor: "Unassigned", requested: "20 Jun 2026", status: "Pending" },
+    { id: "PL-1047", student: "Nana Yeboah", school: "T.I. Ahmadiyya SHS", municipality: "Kumasi Metropolitan", community: "Asokwa", region: "Ashanti", supervisor: "Dr. S. Ofori", requested: "19 Jun 2026", status: "Pending" },
+    { id: "PL-1046", student: "Esi Asare", school: "Akropong D/A JHS", municipality: "Akuapem North Municipal", community: "Akropong", region: "Eastern", supervisor: "Dr. A. Gyasi", requested: "18 Jun 2026", status: "Approved" },
+    { id: "PL-1045", student: "Kwame Mensah", school: "Asokwa M/A JHS", municipality: "Kumasi Metropolitan", community: "Asokwa", region: "Ashanti", supervisor: "Dr. S. Ofori", requested: "17 Jun 2026", status: "Approved" },
+    { id: "PL-1044", student: "Akua Frimpong", school: "St. Louis SHS", municipality: "Oforikrom Municipal", community: "Oduom", region: "Ashanti", supervisor: "Unassigned", requested: "16 Jun 2026", status: "Rejected" }
+  ],
+  notes: [
+    { id: "LN-220", student: "Kwame Mensah", subject: "Mathematics", topic: "Linear equations", week: "Week 6", mentor: "Approved", supervisor: "Pending" },
+    { id: "LN-219", student: "Esi Asare", subject: "English Language", topic: "Comprehension skills", week: "Week 6", mentor: "Approved", supervisor: "Approved" },
+    { id: "LN-218", student: "Gifty Owusu", subject: "Computing", topic: "Computer networks", week: "Week 5", mentor: "Revision", supervisor: "Pending" },
+    { id: "LN-217", student: "Daniel Ofori", subject: "Social Studies", topic: "Ghanaian culture", week: "Week 5", mentor: "Approved", supervisor: "Revision" }
+  ],
+  visits: [
+    { id: "VS-084", student: "Kwame Mensah", supervisor: "Dr. Samuel Ofori", school: "Asokwa M/A JHS", startDate: "2026-06-24", endDate: "2026-06-28", rescheduledDate: "2026-06-25", time: "10:00", status: "Rescheduled", rescheduleReason: "Supervisor adjusted the visit to fit the school timetable." },
+    { id: "VS-085", student: "Esi Asare", supervisor: "Dr. Ama Gyasi", school: "Akropong D/A JHS", startDate: "2026-06-26", endDate: "2026-06-30", time: "09:30", status: "Scheduled" },
+    { id: "VS-086", student: "Afia Amoah", supervisor: "Dr. Samuel Ofori", school: "Wesley College Demo", startDate: "2026-07-02", endDate: "2026-07-05", time: "11:00", status: "Scheduled" },
+    { id: "VS-081", student: "Daniel Ofori", supervisor: "Dr. Samuel Ofori", school: "Mampong Presby JHS", startDate: "2026-06-16", endDate: "2026-06-19", time: "08:30", status: "Completed" }
+  ],
+  notifications: [
+    { id: "n1", title: "Placement approved", message: "Esi Asare’s placement at Akropong D/A JHS was approved.", time: "8 min ago", read: false, type: "placement" },
+    { id: "n2", title: "Lesson note awaiting review", message: "Kwame Mensah submitted Mathematics — Week 6.", time: "32 min ago", read: false, type: "lesson" },
+    { id: "n3", title: "Visit reminder", message: "Your visit to Asokwa M/A JHS starts tomorrow at 10:00 AM.", time: "1 hr ago", read: false, type: "visit" },
+    { id: "n4", title: "IRB section complete", message: "Afia Amoah completed School Familiarization.", time: "2 hrs ago", read: true, type: "irb" }
+  ]
+};
+
+export const staffInvites: StaffInvite[] = [
+  { id: "INV-001", name: "Dr. Samuel Ofori", email: "samuel.ofori@aamusted.edu.gh", staffId: "STA-0182", role: "supervisor", regions: ["Ashanti", "Bono"], status: "Accepted", invitedAt: "2026-06-20T09:00:00.000Z" },
+  { id: "INV-002", name: "Dr. Linda Antwi", email: "linda.antwi@aamusted.edu.gh", staffId: "STA-0203", role: "supervisor", regions: ["Central"], status: "Pending", invitedAt: "2026-06-24T11:30:00.000Z" }
+];
+
+export const staffMembers: StaffMember[] = [
+  { id: "STF-001", name: "Emmanuel Owusu", email: "coordinator@aamusted.edu.gh", staffId: "COO-0001", role: "coordinator", regions: [], status: "Active" },
+  { id: "STF-002", name: "Dr. Samuel Ofori", email: "samuel.ofori@aamusted.edu.gh", staffId: "STA-0182", role: "supervisor", regions: ["Ashanti", "Bono"], status: "Active" },
+  { id: "STF-003", name: "Dr. Ama Gyasi", email: "ama.gyasi@aamusted.edu.gh", staffId: "STA-0144", role: "supervisor", regions: ["Eastern"], status: "Active" },
+  { id: "STF-004", name: "Dr. Linda Antwi", email: "linda.antwi@aamusted.edu.gh", staffId: "STA-0203", role: "supervisor", regions: ["Central"], status: "Pending" }
+];
+
+export const schools: School[] = [
+  { id: "SCH-001", name: "Asokwa M/A JHS", region: "Ashanti", municipality: "Kumasi Metropolitan", community: "Asokwa", category: "JHS", ownership: "Government", interns: 18, capacity: 24, status: "Active" },
+  { id: "SCH-002", name: "Akropong D/A JHS", region: "Eastern", municipality: "Akuapem North Municipal", community: "Akropong", category: "JHS", ownership: "Government", interns: 11, capacity: 16, status: "Active" },
+  { id: "SCH-003", name: "Wesley College Demonstration School", region: "Ashanti", municipality: "Kumasi Metropolitan", community: "Asokwa", category: "Basic", ownership: "Government", interns: 23, capacity: 28, status: "Active" },
+  { id: "SCH-004", name: "Sunyani Senior High School", region: "Bono", municipality: "Sunyani Municipal", community: "New Town", category: "SHS", ownership: "Government", interns: 14, capacity: 20, status: "Active" },
+  { id: "SCH-005", name: "Kumasi Technical SHS", region: "Ashanti", municipality: "Kumasi Metropolitan", community: "Atonsu", category: "Technical", ownership: "Government", interns: 16, capacity: 18, status: "Active" },
+  { id: "SCH-006", name: "Tanoso Anglican Primary School", region: "Bono East", municipality: "Techiman Municipal", community: "Tanoso", category: "Primary", ownership: "Government", interns: 4, capacity: 12, status: "Active" },
+  { id: "SCH-007", name: "Tanoso D/A JHS", region: "Bono East", municipality: "Techiman Municipal", community: "Tanoso", category: "JHS", ownership: "Government", interns: 6, capacity: 14, status: "Active" },
+  { id: "SCH-008", name: "Tanoso Community SHS", region: "Bono East", municipality: "Techiman Municipal", community: "Tanoso", category: "SHS", ownership: "Government", interns: 8, capacity: 20, status: "Active" },
+  { id: "SCH-009", name: "Tanoso Technical Institute", region: "Bono East", municipality: "Techiman Municipal", community: "Tanoso", category: "TVET", ownership: "Government", interns: 5, capacity: 18, status: "Active" },
+  { id: "SCH-010", name: "Prempeh College", region: "Ashanti", municipality: "Kumasi Metropolitan", community: "Sofoline", category: "SHS", ownership: "Government", interns: 9, capacity: 18, status: "Active" },
+  { id: "SCH-011", name: "Opoku Ware School", region: "Ashanti", municipality: "Kumasi Metropolitan", community: "Santasi", category: "SHS", ownership: "Mission", interns: 7, capacity: 16, status: "Active" },
+  { id: "SCH-012", name: "Kumasi Technical Institute", region: "Ashanti", municipality: "Kumasi Metropolitan", community: "Amakom", category: "TVET", ownership: "Government", interns: 16, capacity: 30, status: "Active" },
+  { id: "SCH-013", name: "Kaasi Montessori School", region: "Ashanti", municipality: "Asokwa Municipal", community: "Kaase", category: "Basic", ownership: "Private", interns: 2, capacity: 8, status: "Active" },
+  { id: "SCH-014", name: "Accra Technical Training Centre", region: "Greater Accra", municipality: "Accra Metropolitan", community: "Kokomlemle", category: "TVET", ownership: "Government", interns: 8, capacity: 25, status: "Active" },
+  { id: "SCH-015", name: "Galaxy International School", region: "Greater Accra", municipality: "Adentan Municipal", community: "Ashaley Botwe", category: "Basic", ownership: "Private", interns: 2, capacity: 8, status: "Active" }
+  ,{ id: "SCH-016", name: "Goaso Senior High School", region: "Ahafo", municipality: "Asunafo North Municipal", community: "Goaso", category: "SHS", ownership: "Government", interns: 4, capacity: 14, status: "Active" }
+  ,{ id: "SCH-017", name: "Kenyasi Technical Institute", region: "Ahafo", municipality: "Asutifi North District", community: "Kenyasi", category: "TVET", ownership: "Government", interns: 3, capacity: 12, status: "Active" }
+  ,{ id: "SCH-018", name: "Dambai College of Education Demonstration Basic School", region: "Oti", municipality: "Krachi East Municipal", community: "Dambai", category: "Basic", ownership: "Government", interns: 3, capacity: 10, status: "Active" }
+  ,{ id: "SCH-019", name: "Damongo Senior High School", region: "Savannah", municipality: "West Gonja Municipal", community: "Damongo", category: "SHS", ownership: "Government", interns: 4, capacity: 12, status: "Active" }
+  ,{ id: "SCH-020", name: "Bolgatanga Technical Institute", region: "Upper East", municipality: "Bolgatanga Municipal", community: "Bolgatanga", category: "TVET", ownership: "Government", interns: 5, capacity: 15, status: "Active" }
+  ,{ id: "SCH-021", name: "Wa Senior High Technical School", region: "Upper West", municipality: "Wa Municipal", community: "Wa Central", category: "Technical", ownership: "Government", interns: 5, capacity: 15, status: "Active" }
+  ,{ id: "SCH-022", name: "Sefwi Wiawso Senior High Technical School", region: "Western North", municipality: "Sefwi Wiawso Municipal", community: "Sefwi Wiawso", category: "Technical", ownership: "Government", interns: 5, capacity: 14, status: "Active" }
+  ,{ id: "SCH-023", name: "Walewale Senior High Technical School", region: "North East", municipality: "West Mamprusi Municipal", community: "Walewale", category: "Technical", ownership: "Government", interns: 4, capacity: 12, status: "Active" }
+];
+
+export const schoolSuggestions: { id: string; status: "Pending" | "Approved" | "Rejected"; school: Partial<School> & { suggestedBy?: string }; createdAt: string }[] = [];
+
+export const supervisorAssignments: SupervisorAssignment[] = [
+  { id: "SUP-ASG-001", supervisorId: "STF-002", supervisorName: "Dr. Samuel Ofori", staffId: "STA-0182", regions: ["Ashanti", "Bono"], internIds: ["5201040012", "5201040063"], capacity: 35, completedVisits: 17, status: "Active" },
+  { id: "SUP-ASG-002", supervisorId: "STF-003", supervisorName: "Dr. Ama Gyasi", staffId: "STA-0144", regions: ["Eastern"], internIds: ["5201040028"], capacity: 30, completedVisits: 14, status: "Active" }
+];
+
+export const irbSections: IrbSection[] = [
+  { id: "IRB-1", title: "IRB 1 — School Familiarization", subtitle: "Convert the complete AAMUSTED Whitebook school familiarization section into a digital workflow.", fixed: true, fields: [
+    { id: "student-name", label: "Student name", type: "text", required: true },
+    { id: "school-name", label: "Name of school", type: "text", required: true },
+    { id: "head-of-school", label: "Head of school", type: "text", required: true },
+    { id: "mentor-teacher", label: "Mentor teacher", type: "text", required: true },
+    { id: "facilities", label: "School facilities and resources", type: "textarea", required: false }
+  ] },
+  { id: "IRB-2", title: "IRB 2 — Observation of Mentor Lessons", subtitle: "Capture observation records from mentor lessons before student teaching begins.", fixed: true, fields: [
+    { id: "observation-date", label: "Observation date", type: "date", required: true },
+    { id: "subject-observed", label: "Subject observed", type: "text", required: true },
+    { id: "delivery-notes", label: "Mentor lesson delivery notes", type: "textarea", required: true }
+  ] },
+  { id: "IRB-3", title: "IRB 3 — Curriculum Planning", subtitle: "Configure curriculum analysis, scheme of work and weekly planning fields.", fixed: true, fields: [
+    { id: "curriculum-area", label: "Curriculum area / subject", type: "text", required: true },
+    { id: "scheme-review", label: "Scheme of work review", type: "textarea", required: true }
+  ] },
+  { id: "IRB-4", title: "IRB 4 — Lesson Planning", subtitle: "Configure lesson planning requirements.", fixed: true, fields: [
+    { id: "lesson-objectives", label: "Lesson objectives", type: "textarea", required: true }
+  ] },
+  { id: "IRB-5", title: "IRB 5 — Teaching Practice", subtitle: "Configure teaching practice records.", fixed: true, fields: [
+    { id: "teaching-summary", label: "Teaching practice summary", type: "textarea", required: true }
+  ] }
+];
+
+export const irbSubmissions: IrbSubmission[] = [
+  { id: "IRB-SUB-001", studentId: "5201040012", studentName: "Kwame Mensah", sectionId: "IRB-1", sectionTitle: "School Familiarization", status: "Submitted", values: { "school-name": "Asokwa M/A JHS" }, submittedAt: "2026-06-25T09:00:00.000Z" }
+];
+
+export const lessonNoteFormat: LessonNoteFormat = {
+  id: "LNF-001",
+  modeDefault: "Weekly",
+  fontSize: "12px",
+  headingSize: "16px",
+  lineHeight: "1.65",
+  tableDensity: "Comfortable",
+  fields: [
+    { id: "learning-indicators", label: "Learning indicator(s)", type: "textarea", required: true },
+    { id: "performance-indicators", label: "Performance indicator", type: "textarea", required: true },
+    { id: "resources", label: "Teaching / Learning resources", type: "textarea", required: true }
+  ]
+};
+
+export const internshipLetterTemplate: InternshipLetterTemplate = {
+  id: "ILT-001",
+  letterheadName: "AKENTEN APPIAH-MENKA UNIVERSITY OF SKILLS TRAINING AND ENTREPRENEURIAL DEVELOPMENT",
+  letterheadSubheading: "Centre for Supported Teaching in Schools and Internship",
+  footerContact: "AAMUSTED · Kumasi Campus · cstsi@aamusted.edu.gh",
+  title: "Introductory Letter for School Internship",
+  body: "This is to introduce {{student_name}}, with student number {{student_id}}, a student of AAMUSTED, who is pursuing a four-year Bachelor of Education programme.",
+  signatories: [{ id: "SIG-001", name: "Ag. Head, Centre for Supported Teaching in Schools and Internship", title: "For: Director, CSTSI" }]
+};
+
+export const auditLogs: AuditLog[] = [
+  { id: "AUD-001", actor: "Emmanuel Owusu", action: "APPROVED", record: "Placement PL-1046", timestamp: "2026-06-24T09:42:00.000Z" },
+  { id: "AUD-002", actor: "Dr. Samuel Ofori", action: "REVIEWED", record: "Lesson note LN-220", timestamp: "2026-06-24T09:16:00.000Z" }
+];
+
+type PersistedDemoState = {
+  workflow?: WorkflowData;
+  schools?: School[];
+  staffMembers?: StaffMember[];
+  staffInvites?: StaffInvite[];
+  supervisorAssignments?: SupervisorAssignment[];
+  schoolSuggestions?: typeof schoolSuggestions;
+  irbSections?: IrbSection[];
+  irbSubmissions?: IrbSubmission[];
+  lessonNoteFormat?: LessonNoteFormat;
+  internshipLetterTemplate?: InternshipLetterTemplate;
+  auditLogs?: AuditLog[];
+};
+
+const demoDataDirectory = path.join(process.cwd(), "data");
+const demoDataFile = path.join(demoDataDirectory, "demo-state.json");
+
+function replaceArray<T>(target: T[], next?: T[]) {
+  if (!Array.isArray(next)) return;
+  target.splice(0, target.length, ...next);
+}
+
+function hydrateDemoState() {
+  if (!fs.existsSync(demoDataFile)) return;
+  try {
+    const state = JSON.parse(fs.readFileSync(demoDataFile, "utf8")) as PersistedDemoState;
+    if (state.workflow) Object.assign(workflow, state.workflow);
+    replaceArray(schools, state.schools);
+    replaceArray(staffMembers, state.staffMembers);
+    replaceArray(staffInvites, state.staffInvites);
+    replaceArray(supervisorAssignments, state.supervisorAssignments);
+    replaceArray(schoolSuggestions, state.schoolSuggestions);
+    replaceArray(irbSections, state.irbSections);
+    replaceArray(irbSubmissions, state.irbSubmissions);
+    if (state.lessonNoteFormat) Object.assign(lessonNoteFormat, state.lessonNoteFormat);
+    if (state.internshipLetterTemplate) Object.assign(internshipLetterTemplate, state.internshipLetterTemplate);
+    replaceArray(auditLogs, state.auditLogs);
+  } catch (error) {
+    console.warn("Could not load persisted demo state; using seed data.", error);
+  }
+}
+
+export function persistDemoState() {
+  fs.mkdirSync(demoDataDirectory, { recursive: true });
+  const state: PersistedDemoState = {
+    workflow,
+    schools,
+    staffMembers,
+    staffInvites,
+    supervisorAssignments,
+    schoolSuggestions,
+    irbSections,
+    irbSubmissions,
+    lessonNoteFormat,
+    internshipLetterTemplate,
+    auditLogs,
+  };
+  fs.writeFileSync(demoDataFile, JSON.stringify(state, null, 2));
+}
+
+hydrateDemoState();
