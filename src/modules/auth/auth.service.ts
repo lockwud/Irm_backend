@@ -1,9 +1,8 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import fs from "node:fs";
-import path from "node:path";
 import { env } from "../../config/env.js";
 import { workflow } from "../../seed.js";
+import { persistState, readState } from "../../database/state-store.js";
 
 type DemoAccount = { role: string; identifier: string; passwordHash: string; name: string; mustChangePassword?: boolean };
 
@@ -26,25 +25,23 @@ const demoAccounts: DemoAccount[] = [
   { role: "coordinator", identifier: "coordinator@aamusted.edu.gh", passwordHash: hashPassword("Coordinator@123"), name: "Emmanuel Owusu", mustChangePassword: false },
 ];
 
-const accountDataDirectory = path.join(process.cwd(), "data");
-const accountDataFile = path.join(accountDataDirectory, "auth-accounts.json");
+export function hydrateAuthAccountsFromState(saved: DemoAccount[]) {
+  if (Array.isArray(saved)) demoAccounts.splice(0, demoAccounts.length, ...saved);
+}
 
-function hydrateAccounts() {
-  if (!fs.existsSync(accountDataFile)) return;
-  try {
-    const saved = JSON.parse(fs.readFileSync(accountDataFile, "utf8")) as DemoAccount[];
-    if (Array.isArray(saved)) demoAccounts.splice(0, demoAccounts.length, ...saved);
-  } catch (error) {
-    console.warn("Could not load persisted auth accounts; using seeded accounts.", error);
-  }
+export async function hydrateAuthAccountsFromPostgres() {
+  const saved = await readState<DemoAccount[]>("sip.auth-accounts");
+  if (saved?.length) hydrateAuthAccountsFromState(saved);
+  else await persistAccountsNow();
+}
+
+export async function persistAccountsNow() {
+  await persistState("sip.auth-accounts", demoAccounts);
 }
 
 function persistAccounts() {
-  fs.mkdirSync(accountDataDirectory, { recursive: true });
-  fs.writeFileSync(accountDataFile, JSON.stringify(demoAccounts, null, 2));
+  persistState("sip.auth-accounts", demoAccounts);
 }
-
-hydrateAccounts();
 
 export function studentInitialPassword(input: { id?: string; email?: string }) {
   const emailPrefix = input.email?.split("@")[0]?.trim();

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth, requireRoles } from "../../common/auth.middleware.js";
 import type { FeatureModule } from "../../common/router.js";
-import { irbSections, irbSubmissions } from "../../seed.js";
+import { irbSections, irbSubmissions, persistDemoState } from "../../seed.js";
 import type { IrbSubmission } from "../../types.js";
 
 const router = Router();
@@ -25,6 +25,7 @@ router.post("/irb/submissions", (request, response) => {
     submittedAt: new Date().toISOString(),
   };
   irbSubmissions.unshift(submission);
+  persistDemoState();
   response.status(201).json(submission);
 });
 router.get("/irb/submissions/:id", (request, response) => {
@@ -36,12 +37,14 @@ router.patch("/irb/submissions/:id/review", requireRoles("coordinator", "supervi
   const submission = irbSubmissions.find((item) => item.id === String(request.params.id));
   if (!submission) return response.status(404).json({ error: "IRB submission not found" });
   submission.status = request.body.status || submission.status;
+  persistDemoState();
   return response.json(submission);
 });
 router.delete("/irb/submissions/:id", requireRoles("coordinator"), (request, response) => {
   const index = irbSubmissions.findIndex((item) => item.id === String(request.params.id));
   if (index < 0) return response.status(404).json({ error: "IRB submission not found" });
   const [removed] = irbSubmissions.splice(index, 1);
+  persistDemoState();
   return response.json(removed);
 });
 

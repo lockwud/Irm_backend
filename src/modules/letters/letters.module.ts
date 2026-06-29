@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { requireAuth, requireRoles } from "../../common/auth.middleware.js";
 import type { FeatureModule } from "../../common/router.js";
-import { internshipLetterTemplate, workflow } from "../../seed.js";
+import { internshipLetterTemplate, persistDemoState, workflow } from "../../seed.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -9,6 +9,7 @@ router.use(requireAuth);
 router.get("/internship-letter/template", (_request, response) => response.json(internshipLetterTemplate));
 router.put("/internship-letter/template", requireRoles("coordinator"), (request, response) => {
   Object.assign(internshipLetterTemplate, request.body);
+  persistDemoState();
   response.json(internshipLetterTemplate);
 });
 router.post("/internship-letter/generate", (request, response) => {

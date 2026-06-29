@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { requireAuth, requireRoles } from "../../common/auth.middleware.js";
 import type { FeatureModule } from "../../common/router.js";
-import { irbSections, lessonNoteFormat } from "../../seed.js";
+import { irbSections, lessonNoteFormat, persistDemoState } from "../../seed.js";
+import { persistState, readState } from "../../database/state-store.js";
 
 const router = Router();
 router.use(requireAuth, requireRoles("coordinator"));
@@ -35,10 +36,21 @@ const programmeSettings = {
   fcmVisitReminders: true,
 };
 
+export async function hydrateProgrammeSettingsFromPostgres() {
+  const saved = await readState<typeof programmeSettings>("sip.programme-settings");
+  if (saved) Object.assign(programmeSettings, saved);
+  else await persistState("sip.programme-settings", programmeSettings);
+}
+
+function persistProgrammeSettings() {
+  persistState("sip.programme-settings", programmeSettings);
+}
+
 // Programme settings used by coordinator administration screens.
 router.get("/settings", (_request, response) => response.json(programmeSettings));
 router.patch("/settings", (request, response) => {
   Object.assign(programmeSettings, request.body);
+  persistProgrammeSettings();
   response.json(programmeSettings);
 });
 
@@ -46,23 +58,27 @@ router.patch("/settings", (request, response) => {
 router.get("/configurations/irb-template", (_request, response) => response.json(irbSections));
 router.put("/configurations/irb-template", (request, response) => {
   irbSections.splice(0, irbSections.length, ...(Array.isArray(request.body) ? request.body : request.body.sections));
+  persistDemoState();
   response.json(irbSections);
 });
 router.post("/configurations/irb-template/sections", (request, response) => {
   const section = { id: `IRB-${Date.now().toString().slice(-4)}`, fixed: false, fields: [], ...request.body };
   irbSections.push(section);
+  persistDemoState();
   response.status(201).json(section);
 });
 router.patch("/configurations/irb-template/sections/:id", (request, response) => {
   const index = irbSections.findIndex((item) => item.id === String(request.params.id));
   if (index < 0) return response.status(404).json({ error: "IRB section not found" });
   irbSections[index] = { ...irbSections[index], ...request.body };
+  persistDemoState();
   return response.json(irbSections[index]);
 });
 router.delete("/configurations/irb-template/sections/:id", (request, response) => {
   const index = irbSections.findIndex((item) => item.id === String(request.params.id));
   if (index < 0) return response.status(404).json({ error: "IRB section not found" });
   const [removed] = irbSections.splice(index, 1);
+  persistDemoState();
   return response.json(removed);
 });
 
@@ -70,6 +86,7 @@ router.delete("/configurations/irb-template/sections/:id", (request, response) =
 router.get("/configurations/lesson-note-format", (_request, response) => response.json(lessonNoteFormat));
 router.put("/configurations/lesson-note-format", (request, response) => {
   Object.assign(lessonNoteFormat, request.body);
+  persistDemoState();
   response.json(lessonNoteFormat);
 });
 

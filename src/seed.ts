@@ -1,6 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { AuditLog, InternshipLetterTemplate, IrbSection, IrbSubmission, LessonNoteFormat, School, StaffInvite, StaffMember, SupervisorAssignment, WorkflowData } from "./types.js";
+import { persistState, readState } from "./database/state-store.js";
 
 export const workflow: WorkflowData = {
   students: [
@@ -141,7 +140,7 @@ export const auditLogs: AuditLog[] = [
   { id: "AUD-002", actor: "Dr. Samuel Ofori", action: "REVIEWED", record: "Lesson note LN-220", timestamp: "2026-06-24T09:16:00.000Z" }
 ];
 
-type PersistedDemoState = {
+export type PersistedDemoState = {
   workflow?: WorkflowData;
   schools?: School[];
   staffMembers?: StaffMember[];
@@ -155,37 +154,27 @@ type PersistedDemoState = {
   auditLogs?: AuditLog[];
 };
 
-const demoDataDirectory = path.join(process.cwd(), "data");
-const demoDataFile = path.join(demoDataDirectory, "demo-state.json");
-
 function replaceArray<T>(target: T[], next?: T[]) {
   if (!Array.isArray(next)) return;
   target.splice(0, target.length, ...next);
 }
 
-function hydrateDemoState() {
-  if (!fs.existsSync(demoDataFile)) return;
-  try {
-    const state = JSON.parse(fs.readFileSync(demoDataFile, "utf8")) as PersistedDemoState;
-    if (state.workflow) Object.assign(workflow, state.workflow);
-    replaceArray(schools, state.schools);
-    replaceArray(staffMembers, state.staffMembers);
-    replaceArray(staffInvites, state.staffInvites);
-    replaceArray(supervisorAssignments, state.supervisorAssignments);
-    replaceArray(schoolSuggestions, state.schoolSuggestions);
-    replaceArray(irbSections, state.irbSections);
-    replaceArray(irbSubmissions, state.irbSubmissions);
-    if (state.lessonNoteFormat) Object.assign(lessonNoteFormat, state.lessonNoteFormat);
-    if (state.internshipLetterTemplate) Object.assign(internshipLetterTemplate, state.internshipLetterTemplate);
-    replaceArray(auditLogs, state.auditLogs);
-  } catch (error) {
-    console.warn("Could not load persisted demo state; using seed data.", error);
-  }
+export function applyPersistedDemoState(state: PersistedDemoState) {
+  if (state.workflow) Object.assign(workflow, state.workflow);
+  replaceArray(schools, state.schools);
+  replaceArray(staffMembers, state.staffMembers);
+  replaceArray(staffInvites, state.staffInvites);
+  replaceArray(supervisorAssignments, state.supervisorAssignments);
+  replaceArray(schoolSuggestions, state.schoolSuggestions);
+  replaceArray(irbSections, state.irbSections);
+  replaceArray(irbSubmissions, state.irbSubmissions);
+  if (state.lessonNoteFormat) Object.assign(lessonNoteFormat, state.lessonNoteFormat);
+  if (state.internshipLetterTemplate) Object.assign(internshipLetterTemplate, state.internshipLetterTemplate);
+  replaceArray(auditLogs, state.auditLogs);
 }
 
-export function persistDemoState() {
-  fs.mkdirSync(demoDataDirectory, { recursive: true });
-  const state: PersistedDemoState = {
+export function demoStateSnapshot(): PersistedDemoState {
+  return {
     workflow,
     schools,
     staffMembers,
@@ -198,7 +187,22 @@ export function persistDemoState() {
     internshipLetterTemplate,
     auditLogs,
   };
-  fs.writeFileSync(demoDataFile, JSON.stringify(state, null, 2));
 }
 
-hydrateDemoState();
+export async function hydrateDemoStateFromPostgres() {
+  const state = await readState<PersistedDemoState>("sip.production-state");
+  if (state) {
+    applyPersistedDemoState(state);
+    return "loaded";
+  }
+  await persistDemoStateNow();
+  return "seeded";
+}
+
+export async function persistDemoStateNow() {
+  await persistState("sip.production-state", demoStateSnapshot());
+}
+
+export function persistDemoState() {
+  persistState("sip.production-state", demoStateSnapshot());
+}

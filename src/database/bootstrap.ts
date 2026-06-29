@@ -1,0 +1,21 @@
+import { hydrateDemoStateFromPostgres } from "../seed.js";
+import { hydrateAuthAccountsFromPostgres } from "../modules/auth/auth.service.js";
+import { hydrateSupportTicketsFromPostgres } from "../modules/support/support.store.js";
+import { hydrateProgrammeSettingsFromPostgres } from "../modules/configurations/configurations.module.js";
+import { hydrateReportsFromPostgres } from "../modules/utilities/utilities.module.js";
+import { hydrateDeviceTokensFromPostgres } from "../modules/notifications/notifications.service.js";
+
+// Production startup hook. It loads all mutable SIP data from PostgreSQL before
+// routes are mounted, so app restarts no longer reset students, schools,
+// placements, settings, IRB templates, lesson formats, support tickets or users.
+export async function bootstrapProductionState() {
+  const [workflowState] = await Promise.all([
+    hydrateDemoStateFromPostgres(),
+    hydrateAuthAccountsFromPostgres(),
+    hydrateSupportTicketsFromPostgres(),
+    hydrateProgrammeSettingsFromPostgres(),
+    hydrateReportsFromPostgres(),
+    hydrateDeviceTokensFromPostgres(),
+  ]);
+  console.log(`Production state ${workflowState} from PostgreSQL.`);
+}

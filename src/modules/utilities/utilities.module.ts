@@ -3,6 +3,7 @@ import { requireAuth, requireRoles } from "../../common/auth.middleware.js";
 import type { FeatureModule } from "../../common/router.js";
 import { auditLogs, workflow } from "../../seed.js";
 import { supportTickets } from "../support/support.store.js";
+import { persistState, readState } from "../../database/state-store.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -10,6 +11,16 @@ const generatedReports = [
   { id: "RPT-001", name: "Programme dashboard", type: "PDF", status: "Ready", generatedAt: "2026-06-24T09:00:00.000Z" },
   { id: "RPT-002", name: "Supervisor workload", type: "Excel", status: "Ready", generatedAt: "2026-06-24T09:15:00.000Z" },
 ];
+
+export async function hydrateReportsFromPostgres() {
+  const saved = await readState<typeof generatedReports>("sip.generated-reports");
+  if (Array.isArray(saved)) generatedReports.splice(0, generatedReports.length, ...saved);
+  else await persistState("sip.generated-reports", generatedReports);
+}
+
+function persistReports() {
+  persistState("sip.generated-reports", generatedReports);
+}
 
 function periodKey(value: unknown) {
   const raw = String(value || "this-week").toLowerCase();
@@ -130,6 +141,7 @@ router.get("/reports", requireRoles("coordinator"), (_request, response) => resp
 router.post("/reports/generate", requireRoles("coordinator"), (request, response) => {
   const report = { id: `RPT-${Date.now().toString().slice(-5)}`, name: request.body.name || "Programme report", type: request.body.type || "PDF", status: "Ready", generatedAt: new Date().toISOString() };
   generatedReports.unshift(report);
+  persistReports();
   response.status(201).json(report);
 });
 

@@ -5,9 +5,8 @@ import type { NotificationItem, WorkflowData } from "../../types.js";
 import { provisionStudentAccount } from "../auth/auth.service.js";
 
 export class WorkflowService {
-  // This seed-backed service behaves like a repository for the demo.
-  // When PostgreSQL/Prisma is connected, each method can be replaced with a DB call
-  // without changing the controller routes or the frontend API contract.
+  // This service keeps the existing frontend workflow contract while every
+  // mutation is persisted into PostgreSQL through the production state store.
   getWorkflow(user?: AuthenticatedUser) {
     return this.scopeWorkflow(user);
   }

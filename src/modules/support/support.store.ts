@@ -1,5 +1,4 @@
-import fs from "node:fs";
-import path from "node:path";
+import { persistState, readState } from "../../database/state-store.js";
 
 export type SupportTicket = {
   id: string;
@@ -27,22 +26,16 @@ export const supportTickets: SupportTicket[] = [
   },
 ];
 
-const supportDataDirectory = path.join(process.cwd(), "data");
-const supportDataFile = path.join(supportDataDirectory, "support-tickets.json");
-
 export function persistSupportTickets() {
-  fs.mkdirSync(supportDataDirectory, { recursive: true });
-  fs.writeFileSync(supportDataFile, JSON.stringify(supportTickets, null, 2));
+  persistState("sip.support-tickets", supportTickets);
 }
 
-function hydrateSupportTickets() {
-  if (!fs.existsSync(supportDataFile)) return;
-  try {
-    const saved = JSON.parse(fs.readFileSync(supportDataFile, "utf8")) as SupportTicket[];
-    if (Array.isArray(saved)) supportTickets.splice(0, supportTickets.length, ...saved);
-  } catch (error) {
-    console.warn("Could not load persisted support tickets; using seeded support queue.", error);
-  }
+export async function persistSupportTicketsNow() {
+  await persistState("sip.support-tickets", supportTickets);
 }
 
-hydrateSupportTickets();
+export async function hydrateSupportTicketsFromPostgres() {
+  const saved = await readState<SupportTicket[]>("sip.support-tickets");
+  if (Array.isArray(saved)) supportTickets.splice(0, supportTickets.length, ...saved);
+  else await persistSupportTicketsNow();
+}

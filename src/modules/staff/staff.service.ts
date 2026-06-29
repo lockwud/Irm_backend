@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { staffInvites, staffMembers } from "../../seed.js";
+import { persistDemoState, staffInvites, staffMembers } from "../../seed.js";
 import type { StaffInvite } from "../../types.js";
 import { WorkflowService } from "../workflow/workflow.service.js";
 import { provisionStaffAccount } from "../auth/auth.service.js";
@@ -46,6 +46,7 @@ export class StaffService {
     const invite = staffInvites.find((item) => item.id === id);
     if (!invite) return null;
     invite.status = "Revoked";
+    persistDemoState();
     return invite;
   }
 }

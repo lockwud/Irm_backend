@@ -55,35 +55,6 @@ function clean(value: unknown, fallback = "Not specified") {
   return text || fallback;
 }
 
-function localLessonGuide(body: LessonGuideBody) {
-  const subject = clean(body.subject, "the subject");
-  const topic = clean(body.topic, "the selected topic");
-  const className = clean(body.className, "the class");
-  const prompt = clean(body.prompt, "lesson note support").toLowerCase();
-
-  if (prompt.includes("indicator")) {
-    return `For ${subject} — ${topic}, use clear Ghana standards-based indicators:\n1. Learners identify the key idea in ${topic}.\n2. Learners explain ${topic} using familiar examples from their community.\n3. Learners apply ${topic} through a short guided activity in ${className}.`;
-  }
-
-  if (prompt.includes("starter")) {
-    return `Starter idea: Begin with a short question linked to learners' daily experience. Ask: “Where have you seen ${topic} around you?” Let learners share two examples, then connect their answers to today's lesson.`;
-  }
-
-  if (prompt.includes("main") || prompt.includes("activity")) {
-    return `Main activity: Explain ${topic} briefly, demonstrate one example, group learners for a task, let them present answers, then correct misconceptions. Keep the activity learner-centred and practical for ${className}.`;
-  }
-
-  if (prompt.includes("reflection") || prompt.includes("assessment")) {
-    return `Reflection/assessment: Ask learners to state one thing they learned, solve one short task on ${topic}, and write one question they still have. Use their answers to plan remediation.`;
-  }
-
-  if (prompt.includes("resource")) {
-    return `Resources: teacher's guide/textbook, board and marker, learner exercise books, local objects or pictures related to ${topic}, and a short worksheet for quick assessment.`;
-  }
-
-  return `For ${subject} — ${topic}, build the lesson note in this order: learning indicators, performance indicators, teaching/learning resources, starter, main activity, learner practice, reflection and assessment. Use simple examples from the Ghanaian classroom context and keep activities learner-centred.`;
-}
-
 function buildGeminiPrompt(body: LessonGuideBody) {
   return [
     "You are an AAMUSTED Student Internship Programme lesson-note assistant.",
@@ -112,7 +83,7 @@ router.post("/ai/lesson-note-guide", async (request, response) => {
   }
 
   if (!env.geminiApiKey) {
-    return response.json({ provider: "fallback", answer: localLessonGuide(body) });
+    return response.status(503).json({ error: "Gemini is not configured. Add GEMINI_API_KEY to the backend environment and restart the API." });
   }
 
   try {
@@ -126,14 +97,16 @@ router.post("/ai/lesson-note-guide", async (request, response) => {
     });
 
     if (!geminiResponse.ok) {
-      return response.json({ provider: "fallback", answer: localLessonGuide(body) });
+      const detail = await geminiResponse.text().catch(() => "");
+      return response.status(502).json({ error: "Gemini request failed. Check GEMINI_API_KEY, GEMINI_MODEL and Render outbound access.", detail });
     }
 
     const data = await geminiResponse.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
     const answer = data.candidates?.[0]?.content?.parts?.map((part) => part.text || "").join("\n").trim();
-    return response.json({ provider: "gemini", answer: answer || localLessonGuide(body) });
-  } catch {
-    return response.json({ provider: "fallback", answer: localLessonGuide(body) });
+    if (!answer) return response.status(502).json({ error: "Gemini returned an empty lesson-note response." });
+    return response.json({ provider: "gemini", answer });
+  } catch (error) {
+    return response.status(502).json({ error: "Gemini request could not be completed.", detail: error instanceof Error ? error.message : "Unknown provider error" });
   }
 });
 
