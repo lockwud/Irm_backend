@@ -6,6 +6,7 @@ export const env = {
   jwtSecret: process.env.JWT_SECRET || "development-secret",
   frontendOrigin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
   databaseUrl: process.env.DATABASE_URL || "",
+  databaseSsl: process.env.DATABASE_SSL === "true",
   // Gemini lesson-note assistant configuration. The API intentionally returns a
   // setup error when the key is missing instead of using a local fallback.
   geminiApiKey: process.env.GEMINI_API_KEY || "",
